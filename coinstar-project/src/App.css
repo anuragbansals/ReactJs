@@ -34,3 +34,7 @@ ul {
 .coin:hover .delete-icon{
     display: block;
 }
+
+img {
+    height: 75px;
+}
