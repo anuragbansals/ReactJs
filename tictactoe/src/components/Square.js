@@ -1,9 +1,9 @@
 import React from 'react'
-import './square.css'
+// import './square.css'
 
 const Square = (props) => {
     return (
-        <button type="button" className="btn">{props.value}</button>
+        <button type="button" className="square">{props.value}</button>
     )
 }
 
