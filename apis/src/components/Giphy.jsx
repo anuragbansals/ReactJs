@@ -1,31 +1,124 @@
-import React,{useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react'
 import axios from 'axios'
+import Loader from './Loader';
+import Paginate from './Paginate';
 const Giphy = () => {
 
-    const [data,setData] = useState([])
-    useEffect(()=> {
+    const [data, setData] = useState([])
+    const [search, setSearch] = useState()
+    const [isLoading, setIsLoading] = useState(false);
+    const [isError, setIsError] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(25)
+    const indexOfLastItem = currentPage * itemsPerPage
+
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentItems = data.slice(indexOfFirstItem,indexOfLastItem)
+
+    useEffect(() => {
         const fetchData = async () => {
-            const results = await axios("https://api.giphy.com/v1/gifs/trending", {
-                params : {
-                    api_key: "8o0u1HzGrHx1tAxWTGvigz7s2aWJ7yBG"
-                }
-            });
-            setData(results.data.data);
+            setIsError(false)
+            setIsLoading(true)
+
+            try {
+                const results = await axios("https://api.giphy.com/v1/gifs/trending", {
+                    params: {
+                        api_key: "8o0u1HzGrHx1tAxWTGvigz7s2aWJ7yBG",
+                        limit: 100
+                    }
+                });
+                setData(results.data.data);
+
+            } catch (err) {
+                setIsError(true)
+                setTimeout(() => setIsError(false), 4000)
+            }
+
+
+
+            setIsLoading(false)
         }
         fetchData()
-    },[])
+    }, [])
 
     const renderGifs = () => {
-        return data.map(el => {
+        if (isLoading) {
+            return <Loader />
+        }
+
+        return currentItems.map(el => {
             return (
                 <div key={el.id} className="gif">
-                    <img src={el.images.fixed_height.url}/>
+                    <img src={el.images.fixed_height.url} />
                 </div>
             )
         })
     }
+    const renderError = () => {
+        if (isError) {
+            return (
+                <div className="alert alert-warning alert-dismissible fade show" role="alert">
+                    Unable to get Gifs, please try again in a few minutes
+                </div>
+            )
+        }
+    }
 
-    return <div className="container gifs">{renderGifs()}</div>
+    const handleSearchChange = (event) => {
+        setSearch(event.target.value);
+    }
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setIsError(false);
+        setIsLoading(true);
+
+        try {
+            const results = await axios("https://api.giphy.com/v1/gifs/search", {
+                params: {
+                    api_key: "8o0u1HzGrHx1tAxWTGvigz7s2aWJ7yBG",
+                    q: search,
+                    limit: 100
+                }
+            })
+            setData(results.data.data);
+        } catch (err) {
+            setIsError(true);
+            setTimeout(() => setIsError(false), 4000)
+        }
+
+
+        setIsLoading(false)
+    }
+
+    const pageSelected = (pageNumber) => {
+        setCurrentPage(pageNumber)
+    }
+
+    return (
+        <div className="m-2">
+            {renderError()}
+            <form className="form-inline justify-content-center m-2">
+                <input onChange={handleSearchChange} type="text" placeholder="search" className="form-control" />
+                <button
+                    onClick={handleSubmit}
+                    type="submit"
+                    className="btn btn-primary mx-2">
+                    Go
+                </button>
+            </form>
+            <Paginate
+                pageSelected={pageSelected}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={data.length}
+            />
+            <div className="container gifs">
+                {renderGifs()}
+            </div>
+        </div>
+    )
+
 }
 
 export default Giphy
